@@ -1,0 +1,240 @@
+/* ADDED FOR DYNAMIC LOGO COLORS */
+:root {
+  --logo-text-color-start: #475569; /* slate-600 */
+  --logo-text-color-end: #1e293b;   /* slate-800 */
+  --logo-stroke-color: #64748b;    /* slate-500 */
+}
+
+html.dark {
+  --logo-text-color-start: #f0f9ff; /* sky-50 */
+  --logo-text-color-end: #e0f2fe;   /* sky-100 */
+  --logo-stroke-color: #a78bfa;
+}
+
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* For IE and Edge */
+  -ms-overflow-style: none;  
+  /* ADDED FOR SMOOTH THEME TRANSITIONS */
+  transition-property: color, background-color;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
+  /* REMOVED background-color to reveal the canvas animation */
+  background-color: transparent;
+}
+
+html.dark body {
+  /* REMOVED background-image to reveal the canvas animation */
+  background-color: transparent;
+}
+
+/* For Firefox */
+html {
+    scrollbar-width: none;
+}
+
+/* For Chrome, Safari, and Opera */
+::-webkit-scrollbar {
+    display: none;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-in-out forwards;
+}
+
+@keyframes pulse-fade-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-pulse-fade-in {
+  animation: pulse-fade-in 1.5s ease-out forwards;
+}
+
+/* --- Custom Animations & Styles --- */
+
+/* Custom scrollbar for topic list */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.5); /* gray-400 with 50% opacity */
+    border-radius: 20px;
+    border: 3px solid transparent;
+}
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(71, 85, 105, 0.7); /* slate-600 with 70% opacity */
+}
+
+@keyframes slide-in-stagger {
+  from {
+    opacity: 0;
+    transform: translateX(-15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-stagger-in {
+  /* Use 'backwards' to apply 'from' styles before animation starts */
+  animation: slide-in-stagger 0.4s ease-out backwards;
+}
+
+/* UPDATED for sidebar glow effect to match spec */
+.sidebar-glow {
+  box-shadow: inset 0 0 24px rgba(100,100,255,0.02);
+}
+.dark .sidebar-glow {
+  box-shadow: inset 0 0 24px rgba(100,100,255,0.02);
+}
+
+/* UPDATED icon hover glow to be more subtle */
+.icon-glow-hover:hover {
+  filter: drop-shadow(0 0 8px rgba(120,90,255,0.06));
+}
+.dark .icon-glow-hover:hover {
+  filter: drop-shadow(0 0 8px rgba(165,180,252,0.1));
+}
+
+/* ADDED for accessibility: reduced transparency mode */
+@media (prefers-reduced-transparency: reduce) {
+  .glass-panel, .glass-header, .glass-sidebar {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  .glass-panel {
+    background-color: white !important;
+  }
+  .dark .glass-panel {
+    background-color: #0f172a !important; /* slate-900 */
+  }
+  .glass-header, .glass-sidebar {
+    background-color: rgba(248, 250, 252, 0.9) !important; /* slate-50 with opacity */
+  }
+  .dark .glass-header, .dark .glass-sidebar {
+    background-color: rgba(30, 41, 59, 0.9) !important; /* slate-800 with opacity */
+  }
+}
+
+/* --- NEW LOGO ANIMATIONS --- */
+.logo-glow {
+  /* Changed to a dark black shadow for better contrast and sharpness */
+  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.9)); 
+}
+
+@keyframes stars-drift {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-200px); /* This is half the height of the starfield group in the SVG for a seamless loop */
+  }
+}
+.stars-drift {
+  animation: stars-drift 30s linear infinite;
+}
+
+@keyframes star-flicker {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(0.8) rotate(0deg);
+    filter: brightness(1.2);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.3) rotate(180deg);
+    filter: brightness(1.8);
+  }
+}
+.star-flicker {
+  animation: star-flicker 4s ease-in-out infinite alternate;
+  transform-origin: center;
+}
+
+
+/* ADDED for button hover glow */
+.button-glow-hover:hover:not(:disabled) {
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.4); /* blue-500 */
+}
+.dark .button-glow-hover:hover:not(:disabled) {
+  box-shadow: 0 0 18px rgba(96, 165, 250, 0.5); /* blue-400 */
+}
+
+/* --- NEW INTRO ANIMATIONS --- */
+@keyframes intro-progress-orbit {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.animate-intro-progress-orbit {
+  animation: intro-progress-orbit 2s linear infinite;
+}
+
+@keyframes intro-ripple {
+  from {
+    transform: scale(0.5);
+    opacity: 0.6;
+  }
+  to {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+.animate-intro-ripple {
+  animation: intro-ripple 2.5s ease-out infinite;
+}
+
+@keyframes intro-logo-pulse {
+  /* Adjusted for a dark "breathing" effect instead of a bright color glow */
+  0%, 100% { 
+    transform: scale(1); 
+    filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.8)); 
+  }
+  50% { 
+    transform: scale(1.08); 
+    filter: drop-shadow(0 0 25px rgba(0, 0, 0, 0.95)); 
+  }
+}
+.animate-intro-logo-pulse {
+  animation: intro-logo-pulse 4s ease-in-out infinite;
+}
+
+@keyframes intro-text-reveal {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-intro-text-reveal {
+  opacity: 0; /* Start hidden */
+  animation: intro-text-reveal 1s ease-out 1s forwards; /* 1s delay */
+}
+
+.intro-text {
+  background-image: linear-gradient(to right, #a855f7, #2dd4bf);
+}
