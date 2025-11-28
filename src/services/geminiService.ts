@@ -1,8 +1,7 @@
 import { GoogleGenAI, Type, Chat, Modality } from "@google/genai";
-import type { QuestionAnswer, Standard, ChatSession, MCQ, Subject, UnitTest } from '../types';
-import { CHAPTERS, TTSVoice } from "../constants";
+import type { Standard, ChatSession, MCQ, Subject, UnitTest } from '../types';
+import { TTSVoice } from "../constants";
 
-// FIX: Aligned with coding guidelines by using process.env.API_KEY directly.
 if (!process.env.API_KEY) {
     throw new Error("API_KEY environment variable is not set. Please add it to your project settings.");
 }
