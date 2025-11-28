@@ -334,15 +334,18 @@ export const VisualizationCard = ({ title, topic, promptState }: { title: string
 
         if (platform === 'gemini') {
             const geminiUrl = "https://gemini.google.com/app"; 
-            let newWindow = null;
             
-            try {
-                // Synchronously try to open the new tab
-                newWindow = window.open(geminiUrl, '_blank', 'noopener,noreferrer');
-            } catch (e) {
-                console.warn("Failed to open window synchronously", e);
-            }
+            // Method: Use a hidden anchor tag to force a new tab/window reliably on mobile
+            // This is generally treated as a direct user action by browsers.
+            const link = document.createElement('a');
+            link.href = geminiUrl;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
 
+            // Copy to clipboard asynchronously
             navigator.clipboard.writeText(editedPrompt)
                 .then(() => {
                     setCopiedButton('gemini');
@@ -351,11 +354,6 @@ export const VisualizationCard = ({ title, topic, promptState }: { title: string
                 .catch((err) => {
                     console.error('Failed to copy prompt for Gemini:', err);
                 });
-
-            // Fallback: If popup was blocked, navigate the current tab
-            if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-                window.location.href = geminiUrl;
-            }
 
         } else { // platform === 'meta'
             setCopiedButton('meta');
