@@ -1,10 +1,8 @@
-
 import React, { useState, PropsWithChildren, useEffect, useRef, useCallback } from 'react';
 import type { MCQ, TopicContent, UnitTest, FillInTheBlank, ShortAnswerQuestion } from '../types';
 import { ErrorMessage } from './ErrorMessage';
 
 // --- AUDIO DECODING HELPERS ---
-// Decodes a base64 string into a Uint8Array.
 function decode(base64: string): Uint8Array {
   const binaryString = atob(base64);
   const len = binaryString.length;
@@ -15,14 +13,12 @@ function decode(base64: string): Uint8Array {
   return bytes;
 }
 
-// Converts raw PCM audio data from the Gemini API into an AudioBuffer that can be played.
 async function decodeRawAudioData(
   data: Uint8Array,
   ctx: AudioContext,
   sampleRate: number,
   numChannels: number,
 ): Promise<AudioBuffer> {
-  // The raw data is 16-bit PCM, so we create a Int16Array view on the buffer.
   const dataInt16 = new Int16Array(data.buffer);
   const frameCount = dataInt16.length / numChannels;
   const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
@@ -30,7 +26,6 @@ async function decodeRawAudioData(
   for (let channel = 0; channel < numChannels; channel++) {
     const channelData = buffer.getChannelData(channel);
     for (let i = 0; i < frameCount; i++) {
-      // Normalize the 16-bit integer samples to the float range [-1.0, 1.0]
       channelData[i] = dataInt16[i * numChannels + channel] / 32768.0;
     }
   }
@@ -52,21 +47,12 @@ const WhatsAppIcon = () => (
 
 
 // --- INTERNAL COMPONENTS ---
-
-/**
- * A lightweight parser that converts a markdown string into React elements.
- * Handles paragraphs, bold (**text**), and italics (*text*).
- */
 const MarkdownContent: React.FC<{ content: string }> = ({ content }) => {
-    // Split content into paragraphs based on double newlines.
     const paragraphs = content.split('\n\n');
-
     return (
         <>
             {paragraphs.map((p, pIndex) => {
-                // Regex to split by bold or italic markers, keeping the markers.
                 const parts = p.split(/(\*\*.*?\*\*|\*.*?\*)/g).filter(Boolean);
-
                 return (
                     <p key={pIndex}>
                         {parts.map((part, partIndex) => {
@@ -80,7 +66,6 @@ const MarkdownContent: React.FC<{ content: string }> = ({ content }) => {
                             if (part.startsWith('*') && part.endsWith('*')) {
                                 return <em key={partIndex}>{part.slice(1, -1)}</em>;
                             }
-                            // Handle single newlines within a paragraph as line breaks.
                             const lineBrokenParts = part.split('\n').map((line, lineIndex, arr) => (
                                 <React.Fragment key={lineIndex}>
                                     {line}
@@ -134,10 +119,11 @@ const AudioPlayer = ({ audioB64 }: { audioB64: string }) => {
         const initAudio = async () => {
             try {
                 if (!audioContextRef.current) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
                 }
                 const decodedBytes = decode(audioB64);
-                const buffer = await decodeRawAudioData(decodedBytes, audioContextRef.current, 24000, 1);
+                const buffer = await decodeRawAudioData(decodedBytes, audioContextRef.current!, 24000, 1);
                 if (isMounted) {
                     audioBufferRef.current = buffer;
                     setIsReady(true);
@@ -190,21 +176,23 @@ const MCQViewer = ({ mcqs }: { mcqs: MCQ[] }) => {
         <div className="space-y-6">
             {mcqs.map((mcq, index) => {
                 const selectedAnswer = userAnswers[index];
+                const isSelected = !!selectedAnswer; // Helper for TS
+
                 return (
                     <div key={index}>
                         <p className="font-semibold text-sm text-slate-800 dark:text-slate-100 mb-3">{index + 1}. {mcq.question}</p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             {mcq.options.map((option) => {
-                                const isSelected = selectedAnswer === option;
+                                const isOptionSelected = selectedAnswer === option;
                                 const isCorrect = showResults && mcq.correctAnswer === option;
-                                const isIncorrect = showResults && isSelected && !isCorrect;
+                                const isIncorrect = showResults && isOptionSelected && !isCorrect;
 
                                 let optionClass = 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-transparent';
                                 if (showResults) {
                                     if (isCorrect) optionClass = 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300 border-green-500';
                                     else if (isIncorrect) optionClass = 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300 border-red-500';
                                     else optionClass = 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-transparent';
-                                } else if (isSelected) {
+                                } else if (isOptionSelected) {
                                     optionClass = 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300 border-blue-500';
                                 }
 
@@ -303,7 +291,6 @@ const GeneratedCard = ({ title, children, shareText }: PropsWithChildren<{ title
 };
 
 export const AnswerCard = ({ title, content, audioState, onGenerateAudio }: { title: string; content: string; audioState?: TopicContent['explanationAudio']; onGenerateAudio?: () => void; }) => {
-    // Split the content by markdown code blocks, keeping the code blocks
     const parts = content.split(/(```[\s\S]*?```)/g).filter(part => part.trim() !== '');
 
     return (
@@ -346,19 +333,30 @@ export const VisualizationCard = ({ title, topic, promptState }: { title: string
         if (!editedPrompt) return;
 
         if (platform === 'gemini') {
-            // CRITICAL FIX: Open the window synchronously to avoid popup blockers on mobile.
-            // Mobile browsers block window.open() calls that happen inside async callbacks (like .then() from writeText).
-            const url = `https://gemini.google.com/app?prompt=${encodeURIComponent(editedPrompt)}`;
-            window.open(url, '_blank', 'noopener,noreferrer');
+            const geminiUrl = "https://gemini.google.com/app"; 
+            let newWindow = null;
+            
+            try {
+                // Synchronously try to open the new tab
+                newWindow = window.open(geminiUrl, '_blank', 'noopener,noreferrer');
+            } catch (e) {
+                console.warn("Failed to open window synchronously", e);
+            }
 
-            // Attempt to copy to clipboard as a secondary action (convenience)
-            navigator.clipboard.writeText(editedPrompt).then(() => {
-                setCopiedButton('gemini');
-                setTimeout(() => setCopiedButton(null), 2500);
-            }).catch(err => {
-                console.error('Failed to copy prompt for Gemini:', err);
-                // No need to open window here, it's already opened.
-            });
+            navigator.clipboard.writeText(editedPrompt)
+                .then(() => {
+                    setCopiedButton('gemini');
+                    setTimeout(() => setCopiedButton(null), 2500);
+                })
+                .catch((err) => {
+                    console.error('Failed to copy prompt for Gemini:', err);
+                });
+
+            // Fallback: If popup was blocked, navigate the current tab
+            if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+                window.location.href = geminiUrl;
+            }
+
         } else { // platform === 'meta'
             setCopiedButton('meta');
             const timer = setTimeout(() => setCopiedButton(null), 2500);
@@ -368,10 +366,7 @@ export const VisualizationCard = ({ title, topic, promptState }: { title: string
             const encodedPrompt = encodeURIComponent(promptText);
             const url = `https://wa.me/${metaAiPhoneNumber}?text=${encodedPrompt}`;
             
-            // Open window synchronously for Meta AI as well, just to be consistent and safe.
             window.open(url, '_blank', 'noopener,noreferrer');
-            
-            return () => clearTimeout(timer);
         }
     }, [editedPrompt]);
     
