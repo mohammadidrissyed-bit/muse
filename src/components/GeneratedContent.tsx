@@ -1,3 +1,4 @@
+
 import React, { useState, PropsWithChildren, useEffect, useRef, useCallback } from 'react';
 import type { MCQ, TopicContent, UnitTest, FillInTheBlank, ShortAnswerQuestion } from '../types';
 import { ErrorMessage } from './ErrorMessage';
@@ -345,33 +346,31 @@ export const VisualizationCard = ({ title, topic, promptState }: { title: string
         if (!editedPrompt) return;
 
         if (platform === 'gemini') {
+            // CRITICAL FIX: Open the window synchronously to avoid popup blockers on mobile.
+            // Mobile browsers block window.open() calls that happen inside async callbacks (like .then() from writeText).
+            const url = `https://gemini.google.com/app?prompt=${encodeURIComponent(editedPrompt)}`;
+            window.open(url, '_blank', 'noopener,noreferrer');
+
+            // Attempt to copy to clipboard as a secondary action (convenience)
             navigator.clipboard.writeText(editedPrompt).then(() => {
                 setCopiedButton('gemini');
-                const timer = setTimeout(() => setCopiedButton(null), 2500);
-
-                const url = `https://gemini.google.com/app?prompt=${encodeURIComponent(editedPrompt)}`;
-                window.open(url, '_blank', 'noopener,noreferrer');
-                
-                return () => clearTimeout(timer);
+                setTimeout(() => setCopiedButton(null), 2500);
             }).catch(err => {
                 console.error('Failed to copy prompt for Gemini:', err);
-                // Fallback: still open the URL even if copy fails
-                const url = `https://gemini.google.com/app?prompt=${encodeURIComponent(editedPrompt)}`;
-                window.open(url, '_blank', 'noopener,noreferrer');
+                // No need to open window here, it's already opened.
             });
         } else { // platform === 'meta'
             setCopiedButton('meta');
             const timer = setTimeout(() => setCopiedButton(null), 2500);
             
-            // Per user's example, use the official Meta AI bot phone number
-            // and prepend the prompt with the `/imagine` command.
             const metaAiPhoneNumber = '13135550002';
             const promptText = `/imagine ${editedPrompt}`;
             const encodedPrompt = encodeURIComponent(promptText);
             const url = `https://wa.me/${metaAiPhoneNumber}?text=${encodedPrompt}`;
+            
+            // Open window synchronously for Meta AI as well, just to be consistent and safe.
             window.open(url, '_blank', 'noopener,noreferrer');
             
-            // Must return the timeout cleanup function
             return () => clearTimeout(timer);
         }
     }, [editedPrompt]);
