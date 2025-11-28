@@ -6,3 +6,8 @@
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
+{
+  "redirects": [
+    { "source": "/(.*)", "destination": "https://museperfect.vercel.app/$1", "permanent": true }
+  ]
+}
