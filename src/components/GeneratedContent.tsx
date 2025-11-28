@@ -1,3 +1,4 @@
+
 import React, { useState, PropsWithChildren, useEffect, useRef, useCallback } from 'react';
 import type { MCQ, TopicContent, UnitTest, FillInTheBlank, ShortAnswerQuestion } from '../types';
 import { ErrorMessage } from './ErrorMessage';
@@ -30,6 +31,34 @@ async function decodeRawAudioData(
     }
   }
   return buffer;
+}
+
+// --- HELPER: Synchronous Clipboard Copy ---
+// This is required for mobile browsers to allow window.open() in the same event loop.
+function copyPromptToClipboard(promptText: string): void {
+    let copied = false;
+    try {
+        const textarea = document.createElement("textarea");
+        textarea.value = promptText;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        textarea.style.left = "-9999px";
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        copied = document.execCommand("copy");
+        document.body.removeChild(textarea);
+    } catch (err) {
+        copied = false;
+    }
+
+    // Modern async clipboard as best-effort (non-blocking, no await)
+    if (!copied && navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+        navigator.clipboard.writeText(promptText).catch(() => {
+            // Fail silently; do not break UX
+        });
+    }
 }
 
 
@@ -333,31 +362,35 @@ export const VisualizationCard = ({ title, topic, promptState }: { title: string
         if (!editedPrompt) return;
 
         if (platform === 'gemini') {
-            const geminiUrl = "https://gemini.google.com/app"; 
-            
-            // Method: Use a hidden anchor tag to force a new tab/window reliably on mobile
-            // This is generally treated as a direct user action by browsers.
-            const link = document.createElement('a');
-            link.href = geminiUrl;
-            link.target = '_blank';
-            link.rel = 'noopener noreferrer';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            const geminiUrl = "https://gemini.google.com/app";
 
-            // Copy to clipboard asynchronously
-            navigator.clipboard.writeText(editedPrompt)
-                .then(() => {
-                    setCopiedButton('gemini');
-                    setTimeout(() => setCopiedButton(null), 2500);
-                })
-                .catch((err) => {
-                    console.error('Failed to copy prompt for Gemini:', err);
-                });
+            // 1. FIRST: copy prompt synchronously (or best-effort)
+            // This MUST happen before window.open or in the same tick to be safe on some browsers,
+            // but execCommand is generally safe.
+            copyPromptToClipboard(editedPrompt);
+
+            // 2. THEN: try to open Gemini in a NEW TAB
+            let newWindow: Window | null = null;
+            try {
+                // IMPORTANT: window.open must be called directly in the event handler (no await)
+                newWindow = window.open(geminiUrl, "_blank", "noopener,noreferrer");
+            } catch (error) {
+                // Ignore errors here; fallback below handles it
+            }
+
+            // 3. FALLBACK: if popup is blocked (newWindow is null), navigate the current tab
+            // This ensures mobile users are taken to the destination even if they block popups
+            if (!newWindow) {
+                window.location.href = geminiUrl;
+            }
+
+            // Update UI feedback
+            setCopiedButton('gemini');
+            setTimeout(() => setCopiedButton(null), 2500);
 
         } else { // platform === 'meta'
             setCopiedButton('meta');
-            const timer = setTimeout(() => setCopiedButton(null), 2500);
+            setTimeout(() => setCopiedButton(null), 2500);
             
             const metaAiPhoneNumber = '13135550002';
             const promptText = `/imagine ${editedPrompt}`;
